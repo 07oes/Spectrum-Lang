@@ -1,68 +1,218 @@
-// Инициализация Telegram Mini App
-const tg = window.Telegram.WebApp;
-
-// Говорим Telegram, что наше приложение готово и можно его показывать
-tg.ready();
-
-// Разворачиваем приложение на всю высоту (если оно открылось не на весь экран)
-tg.expand(); 
-
-// Получаем элементы интерфейса
-const userCard = document.getElementById('user-card');
-const greeting = document.getElementById('greeting');
-const userInfo = document.getElementById('user-info');
-const userAvatar = document.getElementById('user-avatar');
-const mainBtn = document.getElementById('main-btn');
-
-// Проверяем, открыто ли приложение внутри Telegram
-if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-    const user = tg.initDataUnsafe.user;
-    
-    // Показываем карточку
-    userCard.style.display = 'flex';
-    
-    // Формируем приветствие
-    greeting.textContent = `Hello, ${user.first_name}!`;
-    
-    // Формируем информацию
-    let info = `ID: ${user.id}`;
-    if (user.username) {
-        info += `<br>@${user.username}`;
-    }
-    // Если есть премиум, добавляем звездочку
-    if (user.is_premium) {
-        info += `<br>⭐ Premium User`;
-    }
-    userInfo.innerHTML = info;
-
-    // Устанавливаем инициал в аватарку
-    userAvatar.textContent = user.first_name.charAt(0).toUpperCase();
-    
-    // Если Telegram передал фото (это бывает не всегда, зависит от настроек), 
-    // можно установить его фоном. 
-    if (user.photo_url) {
-        userAvatar.style.backgroundImage = `url('${user.photo_url}')`;
-        userAvatar.style.backgroundSize = 'cover';
-        userAvatar.textContent = ''; // Убираем букву
-    }
-
-} else {
-    // Если открыли просто в браузере (не в Telegram)
-    userCard.style.display = 'flex';
-    greeting.textContent = "Hello, Guest!";
-    userInfo.textContent = "Please open this link inside Telegram as a Mini App.";
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    /* Убираем выделение текста при тапах на телефоне */
+    -webkit-user-select: none; 
+    user-select: none;
 }
 
-// Обработчик кнопки
-mainBtn.addEventListener('click', () => {
-    // В Mini Apps часто используют MainButton из самого интерфейса Telegram (кнопка внизу экрана).
-    // Но мы оставили вашу красивую кнопку в центре.
-    // Для примера - покажем alert от Telegram
-    tg.showAlert("You clicked the continue button! Welcome to the app.");
-    
-    // Если нужно закрыть приложение:
-    // tg.close();
-});
+/* Используем цвет фона из темы Telegram (если доступен), иначе наш черный */
+body {
+    background-color: var(--tg-theme-bg-color, #030305);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
-// Настройка цветов приложения под тему Telegram пользователя (если у него темная/светлая)
-// Вы можете использовать tg.themeParams для изменения цветов, но пока оставим ваш темный дизайн.
+/* Контейнер для центрального свечения */
+.glow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 0;
+}
+
+/* Органичное "живое" пятно */
+.aurora-blob {
+    position: absolute;
+    width: 40vw;
+    height: 40vw;
+    max-width: 400px;
+    max-height: 400px;
+    
+    background: linear-gradient(
+        45deg,
+        #ff0055,
+        #ff9900,
+        #ffea00,
+        #00ff55,
+        #00aaff,
+        #7700ff,
+        #ff00aa
+    );
+    background-size: 400% 400%;
+    
+    filter: blur(40px);
+    opacity: 0.9;
+    
+    animation: 
+        gradient-flow 12s ease infinite,
+        blob-shape 10s ease-in-out infinite alternate;
+    
+    transform: translateZ(0);
+}
+
+/* Второе пятно */
+.second-blob {
+    width: 30vw;
+    height: 30vw;
+    max-width: 300px;
+    max-height: 300px;
+    
+    background: linear-gradient(
+        -45deg,
+        #00f2fe 0%, 
+        #4facfe 50%, 
+        #f093fb 100%
+    );
+    opacity: 0.9;
+    mix-blend-mode: screen;
+    animation: 
+        gradient-flow 10s ease infinite reverse,
+        blob-shape-2 8s ease-in-out infinite alternate;
+}
+
+@keyframes gradient-flow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes blob-shape {
+    0% {
+        border-radius: 20% 80% 30% 70% / 60% 20% 80% 40%;
+        transform: rotate(0deg) scale(1) translateZ(0);
+    }
+    33% {
+        border-radius: 80% 20% 70% 30% / 30% 70% 30% 70%;
+        transform: rotate(120deg) scale(1.15) translateZ(0);
+    }
+    66% {
+        border-radius: 40% 60% 20% 80% / 80% 40% 60% 20%;
+        transform: rotate(240deg) scale(0.85) translateZ(0);
+    }
+    100% {
+        border-radius: 20% 80% 30% 70% / 60% 20% 80% 40%;
+        transform: rotate(360deg) scale(1) translateZ(0);
+    }
+}
+
+@keyframes blob-shape-2 {
+    0% {
+        border-radius: 70% 30% 80% 20% / 20% 80% 30% 70%;
+        transform: rotate(360deg) scale(1.2) translateZ(0);
+    }
+    33% {
+        border-radius: 30% 70% 20% 80% / 70% 30% 80% 20%;
+        transform: rotate(240deg) scale(0.8) translateZ(0);
+    }
+    66% {
+        border-radius: 80% 20% 60% 40% / 40% 60% 20% 80%;
+        transform: rotate(120deg) scale(1.1) translateZ(0);
+    }
+    100% {
+        border-radius: 70% 30% 80% 20% / 20% 80% 30% 70%;
+        transform: rotate(0deg) scale(1.2) translateZ(0);
+    }
+}
+
+/* Информационная карточка со стеклянным эффектом */
+.glass-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+    padding: 40px 30px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    text-align: center;
+    color: var(--tg-theme-text-color, white); /* Адаптация под цвет текста Telegram */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Место для аватарки */
+.avatar-container {
+    margin-bottom: 20px;
+}
+
+.avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    background-position: center;
+}
+
+.glass-panel h2 {
+    margin: 0 0 12px;
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.subtitle {
+    margin: 0 0 32px;
+    font-size: 14px;
+    color: var(--tg-theme-hint-color, rgba(255, 255, 255, 0.6));
+    line-height: 1.5;
+}
+
+/* Основная кнопка */
+.tg-login-btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    background: var(--tg-theme-button-color, linear-gradient(45deg, #00f2fe, #4facfe));
+    color: var(--tg-theme-button-text-color, white);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+}
+
+/* Если переменная телеграма не сработала и применился градиент */
+.tg-login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(79, 172, 254, 0.5);
+    filter: brightness(1.1);
+}
+
+.tg-login-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(79, 172, 254, 0.3);
+    filter: brightness(0.95);
+}
