@@ -12,9 +12,9 @@ html, body {
     user-select: none;
 }
 
-/* Используем цвет фона из темы Telegram (если доступен), иначе наш черный */
+/* Устанавливаем строгий черный фон */
 body {
-    background-color: var(--tg-theme-bg-color, #030305);
+    background-color: #000000;
     position: relative;
     display: flex;
     justify-content: center;
