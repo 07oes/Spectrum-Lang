@@ -24,13 +24,8 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
     // Формируем приветствие
     greeting.textContent = `Hello, ${user.first_name}!`;
     
-    // Формируем информацию
-    let info = '';
-    // Если есть премиум, добавляем звездочку
-    if (user.is_premium) {
-        info += `⭐ Premium User`;
-    }
-    userInfo.innerHTML = info;
+    // Очищаем информацию под именем
+    userInfo.innerHTML = '';
 
     // Устанавливаем инициал в аватарку
     userAvatar.textContent = user.first_name.charAt(0).toUpperCase();
