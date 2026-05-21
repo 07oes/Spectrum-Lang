@@ -25,13 +25,10 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
     greeting.textContent = `Hello, ${user.first_name}!`;
     
     // Формируем информацию
-    let info = `ID: ${user.id}`;
-    if (user.username) {
-        info += `<br>@${user.username}`;
-    }
+    let info = '';
     // Если есть премиум, добавляем звездочку
     if (user.is_premium) {
-        info += `<br>⭐ Premium User`;
+        info += `⭐ Premium User`;
     }
     userInfo.innerHTML = info;
 
@@ -51,7 +48,7 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
     userCard.style.display = 'flex';
     greeting.textContent = "Hello, Guest!";
     userInfo.textContent = "Please open this link inside Telegram as a Mini App.";
-}
+} 
 
 // Обработчик кнопки
 mainBtn.addEventListener('click', () => {
