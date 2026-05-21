@@ -12,6 +12,7 @@ const userCard = document.getElementById('user-card');
 const greeting = document.getElementById('greeting');
 const userInfo = document.getElementById('user-info');
 const userAvatar = document.getElementById('user-avatar');
+const mainAvatar = document.getElementById('main-avatar');
 const mainBtn = document.getElementById('main-btn');
 
 // Проверяем, открыто ли приложение внутри Telegram
@@ -28,7 +29,9 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
     userInfo.innerHTML = '';
 
     // Устанавливаем инициал в аватарку
-    userAvatar.textContent = user.first_name.charAt(0).toUpperCase();
+    const initial = user.first_name.charAt(0).toUpperCase();
+    userAvatar.textContent = initial;
+    if (mainAvatar) mainAvatar.textContent = initial;
     
     // Если Telegram передал фото (это бывает не всегда, зависит от настроек), 
     // можно установить его фоном. 
@@ -36,6 +39,11 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
         userAvatar.style.backgroundImage = `url('${user.photo_url}')`;
         userAvatar.style.backgroundSize = 'cover';
         userAvatar.textContent = ''; // Убираем букву
+        
+        if (mainAvatar) {
+            mainAvatar.style.backgroundImage = `url('${user.photo_url}')`;
+            mainAvatar.textContent = '';
+        }
     }
 
 } else {
@@ -47,13 +55,20 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
 
 // Обработчик кнопки
 mainBtn.addEventListener('click', () => {
-    // В Mini Apps часто используют MainButton из самого интерфейса Telegram (кнопка внизу экрана).
-    // Но мы оставили вашу красивую кнопку в центре.
-    // Для примера - покажем alert от Telegram
-    tg.showAlert("You clicked the continue button! Welcome to the app.");
+    // Скрываем начальный экран
+    userCard.style.display = 'none';
     
-    // Если нужно закрыть приложение:
-    // tg.close();
+    // Показываем главную страницу
+    document.getElementById('main-page').style.display = 'block';
+    
+    // Прячем свечение начального экрана
+    document.querySelector('.glow-container').style.display = 'none';
+});
+
+// Обработчик кнопки плюс
+document.getElementById('add-btn').addEventListener('click', () => {
+    // Пока что ничего не происходит
+    console.log("Add button clicked");
 });
 
 // Настройка цветов приложения под тему Telegram пользователя (если у него темная/светлая)
