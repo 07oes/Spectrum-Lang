@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spectrum Aura</title>
+    
+    <!-- ВАЖНО: Подключаем SDK для Telegram Mini Apps -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,21 +17,19 @@
         <div class="aurora-blob second-blob"></div>
     </div>
 
-    <!-- Окно входа со стеклянным эффектом -->
-    <div class="glass-panel">
-        <h2>Welcome</h2>
-        <p class="subtitle">Log in using your Telegram account to continue.</p>
-        
-        <!-- Официальный виджет авторизации Telegram -->
-        <div class="tg-widget-container">
-            <!-- ВАЖНО: Замените "YOUR_BOT_USERNAME_HERE" на username вашего бота (без @) -->
-            <script async src="https://telegram.org/js/telegram-widget.js?22" 
-                    data-telegram-login="spectrumlang_bot" 
-                    data-size="large" 
-                    data-radius="14" 
-                    data-onauth="onTelegramAuth(user)" 
-                    data-request-access="write"></script>
+    <!-- Информационное окно Mini App -->
+    <div class="glass-panel" id="user-card" style="display: none;">
+        <div class="avatar-container">
+            <!-- Сюда будем подставлять фото, если оно есть, или инициалы -->
+            <div id="user-avatar" class="avatar-placeholder">?</div>
         </div>
+        
+        <h2 id="greeting">Welcome!</h2>
+        <p class="subtitle" id="user-info">Loading your profile...</p>
+        
+        <button class="tg-login-btn" id="main-btn">
+            Continue
+        </button>
     </div>
 
 <script src="script.js"></script>
