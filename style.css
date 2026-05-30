@@ -204,13 +204,6 @@ body {
     transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
 }
 
-/* Если переменная телеграма не сработала и применился градиент */
-.tg-login-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(79, 172, 254, 0.5);
-    filter: brightness(1.1);
-}
-
 .tg-login-btn:active {
     transform: translateY(1px);
     box-shadow: 0 2px 10px rgba(79, 172, 254, 0.3);
@@ -348,12 +341,111 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
     flex-shrink: 0; /* Чтобы аватарка не сжималась */
 }
 
+/* Контейнер для карточек с наборами слов */
+.libraries-container {
+    position: relative;
+    z-index: 1; /* Чтобы список был поверх волн-свечения */
+    padding: 48px 20px 120px 20px; /* Увеличен верхний отступ (48px вместо 24px) */
+    height: calc(100% - 72px); /* Высота экрана минус высота шапки */
+    box-sizing: border-box;
+    overflow-y: auto;
+    
+    /* Прячем стандартный скроллбар для эстетики */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); /* Автоматическая сетка колонок */
+    gap: 16px; /* Отступы между квадратами */
+    align-content: start; /* Прижимаем контент к верху */
+}
+
+.libraries-container::-webkit-scrollbar {
+    display: none;
+}
+
+/* Цветовые темы для папок (базовые RGB и прозрачность для радиального градиента) */
+.folder-color-white      { --f-rgb: 255, 255, 255; --bg-c: 0.01; --bg-e: 0.08; --act-c: 0.04; --act-e: 0.12; }
+.folder-color-lightblue  { --f-rgb: 0, 200, 255;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
+.folder-color-blue       { --f-rgb: 30, 80, 255;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
+.folder-color-red        { --f-rgb: 255, 80, 80;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
+.folder-color-orange     { --f-rgb: 255, 150, 0;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
+.folder-color-yellow     { --f-rgb: 255, 230, 0;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
+.folder-color-green      { --f-rgb: 0, 255, 100;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
+.folder-color-purple     { --f-rgb: 139, 0, 255;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
+
+/* Карточка библиотеки (набора) */
+.library-card {
+    position: relative;
+    /* Радиальный градиент: в центре прозрачнее (--bg-c), по краям насыщеннее (--bg-e) */
+    background: radial-gradient(circle closest-side at center, rgba(var(--f-rgb, 255, 255, 255), var(--bg-c, 0.01)) 0%, rgba(var(--f-rgb, 255, 255, 255), var(--bg-e, 0.08)) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: none; /* Убираем линию, чтобы язычок и папка слились в одну фигуру */
+    border-left-color: rgba(255, 255, 255, 0.2);
+    border-radius: 0 16px 16px 16px; /* Идеально прямой левый угол для бесшовного соединения */
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: transform 0.2s, background 0.2s;
+    cursor: pointer;
+    
+    aspect-ratio: 1 / 1; /* Делает элемент квадратным */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    
+    margin-top: 14px; /* Отступ под ярлычок папки */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); /* Мягкая тень для объема */
+}
+
+/* "Язычок" (вкладка) папки */
+.library-card::before {
+    content: '';
+    position: absolute;
+    top: -15px; /* Сдвиг вверх на высоту вкладки */
+    left: -1px; /* Идеальное выравнивание с левым бортом */
+    width: 45%;
+    height: 15px; /* Строго 15px, чтобы убрать нахлест и сложение прозрачности */
+    background: rgba(var(--f-rgb, 255, 255, 255), var(--bg-e, 0.08)); /* Берем цвет края папки для бесшовного стыка */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.2);
+    border-left-color: rgba(255, 255, 255, 0.2);
+    border-bottom: none; /* Убираем границу снизу, чтобы слиться с основной папкой */
+    border-radius: 8px 12px 0 0;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-sizing: border-box;
+}
+
+.library-card:active {
+    transform: scale(0.97);
+    background: radial-gradient(circle closest-side at center, rgba(var(--f-rgb, 255, 255, 255), var(--act-c, 0.04)) 0%, rgba(var(--f-rgb, 255, 255, 255), var(--act-e, 0.12)) 100%);
+}
+
+/* Синхронизируем осветление "язычка" при нажатии на папку */
+.library-card:active::before {
+    background: rgba(var(--f-rgb, 255, 255, 255), var(--act-e, 0.12));
+}
+
+.library-title {
+    position: relative;
+    z-index: 2; /* Помещаем текст над псевдоэлементами */
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    text-align: center; /* Центрируем текст внутри квадрата */
+    word-break: break-word; /* Переносим длинные слова, чтобы они не вылезали за края */
+}
+
 /* Плавающая кнопка плюс (FAB) */
 .fab-btn {
     position: absolute;
     bottom: 40px;
     left: 50%;
     transform: translateX(-50%);
+    z-index: 10;
     width: 64px;
     height: 64px;
     border-radius: 50%;
@@ -381,3 +473,259 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
     transform: translateX(-50%) scale(0.95);
 }
 
+/* --- Модальное окно создания набора --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+/* Переопределяем некоторые свойства glass-panel, чтобы окно было по центру флекс-контейнера */
+.modal-content {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    box-sizing: border-box;
+}
+
+.tg-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--tg-theme-text-color, white);
+    font-size: 16px;
+    margin-bottom: 20px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.tg-input:focus {
+    border-color: rgba(79, 172, 254, 0.8);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.tg-input::placeholder {
+    color: var(--tg-theme-hint-color, rgba(255, 255, 255, 0.5));
+}
+
+/* --- Выбор эмодзи --- */
+.emoji-picker-container {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+}
+.emoji-picker-btn {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 42px;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    transition: all 0.2s;
+}
+.emoji-picker-container:hover .emoji-picker-btn,
+.emoji-picker-container:focus-within .emoji-picker-btn {
+    transform: scale(1.1);
+}
+.emoji-plus {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: var(--tg-theme-button-color, #0a91ff);
+    color: white;
+    font-size: 14px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.emoji-native-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* --- Стили для выбора цвета --- */
+.color-picker {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.color-swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-sizing: border-box;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.color-swatch.selected {
+    border-color: white;
+    transform: scale(1.15);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.tg-btn-secondary {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    background: transparent;
+    color: var(--tg-theme-text-color, white);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.tg-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* --- Стили для новых окон (Библиотека и Изучение) --- */
+.icon-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+.icon-btn:hover { opacity: 1; }
+
+.library-content {
+    position: relative;
+    z-index: 1;
+    height: calc(100% - 72px);
+    overflow-y: auto;
+    padding-bottom: 100px;
+    box-sizing: border-box;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.library-content::-webkit-scrollbar { display: none; }
+
+.words-list-container {
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.word-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.word-item-left { display: flex; flex-direction: column; }
+.word-term { font-size: 16px; font-weight: 600; }
+.word-trans { font-size: 14px; color: rgba(255, 255, 255, 0.6); margin-top: 4px; }
+.word-delete-btn {
+    background: transparent; border: none; color: #ff5050;
+    font-size: 18px; cursor: pointer; padding: 8px;
+}
+
+.study-fab {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    z-index: 10; padding: 16px 32px; border-radius: 50px;
+    background: var(--tg-theme-button-color, linear-gradient(45deg, #0a91ff, #5e5757));
+    color: var(--tg-theme-button-text-color, white); border: none;
+    font-size: 18px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s, filter 0.2s;
+}
+.study-fab:hover { transform: translateX(-50%) scale(1.05); filter: brightness(1.1); }
+
+.study-content {
+    position: relative; z-index: 1; height: calc(100% - 72px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; box-sizing: border-box;
+}
+.flashcard {
+    background-color: transparent; width: 100%; max-width: 340px;
+    height: 60%; perspective: 1000px; margin-bottom: 40px; cursor: pointer;
+}
+.flashcard-inner {
+    position: relative; width: 100%; height: 100%; text-align: center;
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d;
+}
+.flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+.flashcard-front, .flashcard-back {
+    position: absolute; width: 100%; height: 100%;
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 24px; background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3); padding: 20px; box-sizing: border-box;
+}
+.flashcard-back {
+    transform: rotateY(180deg);
+    background: rgba(10, 145, 255, 0.1);
+}
+.flashcard h2 { font-size: 32px; margin: 0; word-break: break-word; }
+.study-controls {
+    display: flex; width: 100%; max-width: 340px; gap: 16px;
+}
+
+/* --- Состояния кнопки добавления слова --- */
+.btn-disabled-red {
+    background: linear-gradient(45deg, #ff5050, #d73838) !important;
+    opacity: 0.7;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    pointer-events: none;
+}
+.btn-disabled-red:active {
+    transform: none !important;
+    filter: none !important;
+}
+.btn-ready-green {
+    background: linear-gradient(45deg, #00ff55, #00aa33) !important;
+    box-shadow: 0 4px 15px rgba(0, 255, 85, 0.4) !important;
+}

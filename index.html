@@ -44,9 +44,94 @@
             </div>
         </div>
         
+        <!-- Контейнер для списка библиотек -->
+        <div id="libraries-list" class="libraries-container"></div>
+        
         <button class="fab-btn" id="add-btn">
             +
         </button>
+    </div>
+
+    <!-- Модальное окно для создания новой библиотеки -->
+    <div class="modal-overlay" id="create-library-modal" style="display: none;">
+        <div class="glass-panel modal-content">
+            
+            <div class="input-row" style="display: flex; gap: 12px; margin-bottom: 24px; align-items: center; width: 100%;">
+                <div class="emoji-picker-container">
+                    <div class="emoji-picker-btn" id="emoji-display">
+                        <span id="selected-emoji">😀</span>
+                        <span class="emoji-plus">+</span>
+                    </div>
+                    <input type="text" id="emoji-input" class="emoji-native-input" placeholder="e">
+                </div>
+                <input type="text" id="library-name-input" class="tg-input" placeholder="lib name" style="margin-bottom: 0; flex: 1;">
+            </div>
+
+            <!-- Выбор цвета папки -->
+            <div class="color-picker" id="folder-color-picker">
+                <div class="color-swatch selected" data-color-class="folder-color-white" style="background: rgba(255, 255, 255, 0.6);"></div>
+                <div class="color-swatch" data-color-class="folder-color-lightblue" style="background: rgba(0, 200, 255, 0.6);"></div>
+                <div class="color-swatch" data-color-class="folder-color-blue" style="background: rgba(30, 80, 255, 0.6);"></div>
+                <div class="color-swatch" data-color-class="folder-color-red" style="background: rgba(255, 80, 80, 0.6);"></div>
+                <div class="color-swatch" data-color-class="folder-color-orange" style="background: rgba(255, 150, 0, 0.6);"></div>
+                <div class="color-swatch" data-color-class="folder-color-yellow" style="background: rgba(255, 230, 0, 0.6);"></div>
+                <div class="color-swatch" data-color-class="folder-color-green" style="background: rgba(0, 255, 100, 0.6);"></div>
+                <div class="color-swatch" data-color-class="folder-color-purple" style="background: rgba(139, 0, 255, 0.6);"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="tg-btn-secondary" id="cancel-btn">Cancel</button>
+                <button class="tg-login-btn" id="save-btn" style="padding: 12px;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Окно просмотра библиотеки (Library View) -->
+    <div class="main-page" id="library-page" style="display: none;">
+        <div class="header-glow"></div>
+        <div class="main-header">
+            <div class="header-content" style="grid-template-columns: 40px minmax(0, 1fr) 40px;">
+                <button class="icon-btn" id="back-to-main-btn" style="grid-column: 1; justify-self: start;">◄</button>
+                <h1 class="main-title" id="library-title-display">Set</h1>
+                <div style="grid-column: 3;"></div>
+            </div>
+        </div>
+        
+        <div class="library-content">
+            <div class="glass-panel" style="position: relative; top: 0; left: 0; transform: none; width: auto; margin: 60px 20px 20px 20px; padding: 20px; border-radius: 20px;">
+                <form id="add-word-form" style="display: flex; gap: 12px; width: 100%; align-items: center; margin: 0;">
+                    <input type="text" id="word-input" class="tg-input" placeholder="Word" style="margin-bottom: 0; flex: 1; border-radius: 50px;">
+                    <input type="text" id="translation-input" class="tg-input" placeholder="Translation" style="margin-bottom: 0; flex: 1; border-radius: 50px;">
+                    <button type="submit" class="tg-login-btn btn-disabled-red" id="add-word-btn" style="padding: 0; width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; font-size: 24px; display: flex; justify-content: center; align-items: center;">+</button>
+                </form>
+            </div>
+            <div id="words-list" class="words-list-container"></div>
+        </div>
+        <button class="study-fab" id="study-btn" style="display: none;">Start Study</button>
+    </div>
+
+    <!-- Окно изучения (Study View) -->
+    <div class="main-page" id="study-page" style="display: none;">
+        <div class="header-glow"></div>
+        <div class="main-header">
+            <div class="header-content" style="grid-template-columns: 40px minmax(0, 1fr) 40px;">
+                <button class="icon-btn" id="back-to-lib-btn" style="grid-column: 1; justify-self: start;">◄</button>
+                <h1 class="main-title">Study</h1>
+                <div id="study-progress" style="grid-column: 3; justify-self: end; font-size: 14px; opacity: 0.7;">1/5</div>
+            </div>
+        </div>
+        <div class="study-content">
+            <div class="flashcard" id="flashcard">
+                <div class="flashcard-inner" id="flashcard-inner">
+                    <div class="flashcard-front"><h2 id="card-word">Word</h2></div>
+                    <div class="flashcard-back"><h2 id="card-translation">Translation</h2></div>
+                </div>
+            </div>
+            <div class="study-controls">
+                <button class="tg-btn-secondary" id="prev-btn" style="flex: 0.3;">Prev</button>
+                <button class="tg-login-btn" id="next-btn" style="flex: 0.7; padding: 12px;">Next</button>
+            </div>
+        </div>
     </div>
 
 <script src="script.js"></script>
