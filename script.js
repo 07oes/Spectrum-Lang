@@ -17,8 +17,8 @@ const mainBtn = document.getElementById('main-btn');
 
 // Элементы модального окна
 const createModal = document.getElementById('create-library-modal');
-const cancelBtn = document.getElementById('cancel-btn');
 const saveBtn = document.getElementById('save-btn');
+const deleteLibBtn = document.getElementById('delete-lib-btn');
 const libraryInput = document.getElementById('library-name-input');
 const colorSwatches = document.querySelectorAll('.color-swatch');
 
@@ -57,6 +57,7 @@ if (closeEmojiPickerBtn) closeEmojiPickerBtn.addEventListener('click', () => emo
 // Структура данных для хранения библиотек
 let librariesData = {};
 let currentLibraryId = null;
+let editingLibraryId = null; // Хранит ID библиотеки, если открыто редактирование
 
 // Генератор ID
 function generateId() {
@@ -206,7 +207,11 @@ mainBtn.addEventListener('click', () => {
 document.getElementById('add-btn').addEventListener('click', () => {
     // Проверка лимита в 24 библиотеки
     if (Object.keys(librariesData).length >= 24) {
-        tg.showAlert("Limit reached: You can create up to 24 libraries.");
+        if (tg.showAlert) {
+            tg.showAlert("Limit reached: You can create up to 24 libraries.");
+        } else {
+            alert("Limit reached: You can create up to 24 libraries.");
+        }
         return;
     }
 
@@ -225,13 +230,18 @@ document.getElementById('add-btn').addEventListener('click', () => {
     colorSwatches[0].classList.add('selected');
     selectedFolderColorClass = 'folder-color-white';
     
+    editingLibraryId = null; // Режим создания (не редактирования)
+    deleteLibBtn.style.display = 'none'; // Скрываем кнопку корзины
+    
     // Небольшая задержка перед фокусом, чтобы анимация (если добавим) успела пройти
     setTimeout(() => libraryInput.focus(), 50); 
 });
 
-// Обработчик кнопки отмены
-cancelBtn.addEventListener('click', () => {
-    createModal.style.display = 'none';
+// Закрытие окна по клику "в молоко" (на фон модального окна)
+createModal.addEventListener('click', (e) => {
+    if (e.target === createModal) {
+        createModal.style.display = 'none';
+    }
 });
 
 // Вынесено в отдельную функцию, чтобы переиспользовать при загрузке из облака
@@ -254,8 +264,69 @@ function createLibraryCard(id, name, emoji, color) {
     }
     
     card.appendChild(title);
-    card.addEventListener('click', () => openLibrary(id));
+    
+    // --- Логика длинного нажатия (Long Press) ---
+    let pressTimer;
+    let isLongPress = false;
+    
+    const startPress = () => {
+        isLongPress = false;
+        pressTimer = setTimeout(() => {
+            isLongPress = true;
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium'); // Легкая вибрация
+            openEditModal(id);
+        }, 500); // 500мс для срабатывания
+    };
+    
+    const cancelPress = () => clearTimeout(pressTimer);
+    
+    // Отслеживаем как мобильные тапы, так и клики мышкой
+    card.addEventListener('touchstart', startPress, {passive: true});
+    card.addEventListener('touchmove', cancelPress, {passive: true});
+    card.addEventListener('touchend', cancelPress);
+    card.addEventListener('mousedown', startPress);
+    card.addEventListener('mousemove', cancelPress);
+    card.addEventListener('mouseup', cancelPress);
+    card.addEventListener('mouseleave', cancelPress);
+    
+    // Обычный клик открывает библиотеку (если это не было долгое нажатие)
+    card.addEventListener('click', (e) => {
+        if (isLongPress) {
+            e.preventDefault(); // Запрещаем открытие после долгого удержания
+            return;
+        }
+        openLibrary(id);
+    });
+    
     librariesList.appendChild(card);
+}
+
+// Открытие окна с параметрами для редактирования
+function openEditModal(id) {
+    editingLibraryId = id;
+    const lib = librariesData[id];
+    
+    // Заполняем поля старыми данными
+    libraryInput.value = lib.name;
+    currentSelectedEmoji = lib.emoji;
+    
+    if (lib.emoji) {
+        selectedEmoji.innerHTML = `<img src="https://emojicdn.elk.sh/${encodeURIComponent(lib.emoji)}?style=apple" alt="${lib.emoji}" style="width: 40px; height: 40px; pointer-events: none;" />`;
+        emojiPlus.style.display = 'none';
+    } else {
+        selectedEmoji.innerHTML = `<img src="https://emojicdn.elk.sh/%F0%9F%98%80?style=apple" alt="😀" style="width: 40px; height: 40px; pointer-events: none; filter: grayscale(100%) opacity(0.6);" />`;
+        emojiPlus.style.display = '';
+    }
+    
+    colorSwatches.forEach(s => s.classList.remove('selected'));
+    const activeSwatch = Array.from(colorSwatches).find(s => s.getAttribute('data-color-class') === lib.color);
+    if (activeSwatch) {
+        activeSwatch.classList.add('selected');
+        selectedFolderColorClass = lib.color;
+    }
+
+    deleteLibBtn.style.display = 'flex'; // Показываем корзину
+    createModal.style.display = 'flex'; // Открываем модальное окно
 }
 
 // Обработчик кнопки сохранения новой библиотеки
@@ -264,26 +335,76 @@ saveBtn.addEventListener('click', () => {
     const libraryEmoji = currentSelectedEmoji;
     
     if (newLibraryName) {
-        console.log("Создана новая библиотека:", newLibraryName);
-        
-        const libId = generateId();
-        librariesData[libId] = {
-            name: newLibraryName,
-            emoji: libraryEmoji,
-            color: selectedFolderColorClass,
-            words: []
-        };
-        
-        createLibraryCard(libId, newLibraryName, libraryEmoji, selectedFolderColorClass);
-        
-        // Асинхронно сохраняем изменения в Telegram Cloud
-        saveLibraryIndex();
-        saveLibraryToCloud(libId);
+        if (editingLibraryId) {
+            // Режим редактирования
+            const lib = librariesData[editingLibraryId];
+            lib.name = newLibraryName;
+            lib.emoji = libraryEmoji;
+            lib.color = selectedFolderColorClass;
+            
+            // Обновляем визуальную карточку без пересоздания
+            const card = document.querySelector(`.library-card[data-id="${editingLibraryId}"]`);
+            if (card) {
+                card.className = `library-card ${selectedFolderColorClass}`;
+                const title = card.querySelector('.library-title');
+                if (libraryEmoji) {
+                    title.innerHTML = `<img src="https://emojicdn.elk.sh/${encodeURIComponent(libraryEmoji)}?style=apple" alt="${libraryEmoji}" style="width: 22px; height: 22px; flex-shrink: 0;" /> <span>${newLibraryName}</span>`;
+                } else {
+                    title.textContent = newLibraryName;
+                }
+            }
+            saveLibraryToCloud(editingLibraryId);
+        } else {
+            // Режим создания новой папки
+            const libId = generateId();
+            librariesData[libId] = { name: newLibraryName, emoji: libraryEmoji, color: selectedFolderColorClass, words: [] };
+            createLibraryCard(libId, newLibraryName, libraryEmoji, selectedFolderColorClass);
+            saveLibraryIndex();
+            saveLibraryToCloud(libId);
+        }
         
         createModal.style.display = 'none';
     } else {
         // Если поле пустое, можно слегка "потрясти" инпут или просто вернуть фокус
         libraryInput.focus();
+    }
+});
+
+// Обработчик удаления библиотеки
+deleteLibBtn.addEventListener('click', (e) => {
+    e.preventDefault(); // Предотвращаем возможные конфликты кликов
+    if (!editingLibraryId) return;
+    
+    const id = editingLibraryId;
+    const libName = librariesData[id].name;
+    const msg = `Delete the set "${libName}"?`;
+    
+    const performDelete = async () => {
+        delete librariesData[id];
+        
+        // Удаляем карточку с экрана
+        const card = document.querySelector(`.library-card[data-id="${id}"]`);
+        if (card) card.remove();
+        createModal.style.display = 'none';
+        
+        // Удаляем из облака
+        await saveLibraryIndex();
+        const chunksStr = await cloud.getItem(`chunks_${id}`);
+        const chunksCount = parseInt(chunksStr || '0');
+        
+        cloud.removeItem(`meta_${id}`);
+        cloud.removeItem(`chunks_${id}`);
+        for (let i = 0; i < chunksCount; i++) {
+            cloud.removeItem(`words_${id}_${i}`);
+        }
+    };
+
+    if (tg.showConfirm) {
+        tg.showConfirm(msg, (confirmed) => {
+            if (confirmed) performDelete();
+        });
+    } else {
+        if (confirm(msg)) performDelete();
     }
 });
 
