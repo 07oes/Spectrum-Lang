@@ -22,21 +22,37 @@ const saveBtn = document.getElementById('save-btn');
 const libraryInput = document.getElementById('library-name-input');
 const colorSwatches = document.querySelectorAll('.color-swatch');
 
-// Логика для выбора эмодзи
-const emojiInput = document.getElementById('emoji-input');
+// Логика для выбора эмодзи (кастомная панель)
+const emojiDisplay = document.getElementById('emoji-display');
 const selectedEmoji = document.getElementById('selected-emoji');
-if (emojiInput) {
-    emojiInput.addEventListener('input', (e) => {
-        const val = e.target.value.trim();
-        if (val) {
-            const chars = Array.from(val); // Позволяет корректно считывать эмодзи (суб-символы)
-            selectedEmoji.textContent = chars[0];
-            e.target.value = chars[0]; // Оставляем только первый символ
-        } else {
-            selectedEmoji.textContent = '';
-        }
+const emojiPlus = document.getElementById('emoji-plus');
+const emojiPickerModal = document.getElementById('emoji-picker-modal');
+const closeEmojiPickerBtn = document.getElementById('close-emoji-picker');
+const emojiGrid = document.getElementById('emoji-grid');
+let currentSelectedEmoji = '';
+
+const popularEmojis = [
+    '😀', '🤣', '🥰', '🧠', '❤️', '⚡️', '💥', '🔥'
+];
+
+// Инициализация сетки эмодзи
+if (emojiGrid) {
+    popularEmojis.forEach(emoji => {
+        const item = document.createElement('div');
+        item.className = 'emoji-grid-item';
+        item.innerHTML = `<img src="https://emojicdn.elk.sh/${encodeURIComponent(emoji)}?style=apple" alt="${emoji}" />`;
+        item.addEventListener('click', () => {
+            currentSelectedEmoji = emoji;
+            selectedEmoji.innerHTML = `<img src="https://emojicdn.elk.sh/${encodeURIComponent(emoji)}?style=apple" alt="${emoji}" style="width: 40px; height: 40px; pointer-events: none;" />`;
+            emojiPickerModal.style.display = 'none';
+            if (emojiPlus) emojiPlus.style.display = 'none';
+        });
+        emojiGrid.appendChild(item);
     });
 }
+
+if (emojiDisplay) emojiDisplay.addEventListener('click', () => emojiPickerModal.style.display = 'flex');
+if (closeEmojiPickerBtn) closeEmojiPickerBtn.addEventListener('click', () => emojiPickerModal.style.display = 'none');
 
 // Структура данных для хранения библиотек
 let librariesData = {};
@@ -45,6 +61,71 @@ let currentLibraryId = null;
 // Генератор ID
 function generateId() {
     return Math.random().toString(36).substr(2, 9);
+}
+
+// --- Обертки для Telegram CloudStorage с поддержкой Promises ---
+const cloud = {
+    setItem: (key, value) => new Promise(res => tg.CloudStorage.setItem(key, value, (err, ok) => res(!err && ok))),
+    getItem: (key) => new Promise(res => tg.CloudStorage.getItem(key, (err, val) => res(err ? null : val))),
+    removeItem: (key) => new Promise(res => tg.CloudStorage.removeItem(key, (err, ok) => res(!err && ok)))
+};
+
+// Сохранение списка ID всех библиотек
+async function saveLibraryIndex() {
+    const ids = Object.keys(librariesData);
+    await cloud.setItem('spectrum_index', JSON.stringify(ids));
+}
+
+// Умное сохранение библиотеки с фрагментацией (Chunking)
+async function saveLibraryToCloud(id) {
+    const lib = librariesData[id];
+    if (!lib) return;
+    
+    const meta = { name: lib.name, emoji: lib.emoji, color: lib.color };
+    await cloud.setItem(`meta_${id}`, JSON.stringify(meta));
+    
+    const wordsStr = JSON.stringify(lib.words || []);
+    const chunkSize = 3500; // Безопасный размер куска (лимит Telegram 4096 байт)
+    const chunksCount = Math.ceil(wordsStr.length / chunkSize);
+    
+    await cloud.setItem(`chunks_${id}`, chunksCount.toString());
+    
+    for (let i = 0; i < chunksCount; i++) {
+        const chunk = wordsStr.substring(i * chunkSize, (i + 1) * chunkSize);
+        await cloud.setItem(`words_${id}_${i}`, chunk);
+    }
+}
+
+// Загрузка всех данных из облака при старте
+async function loadAllFromCloud() {
+    const indexStr = await cloud.getItem('spectrum_index');
+    if (!indexStr) return; 
+    
+    try {
+        const ids = JSON.parse(indexStr);
+        for (const id of ids) {
+            const metaStr = await cloud.getItem(`meta_${id}`);
+            if (!metaStr) continue;
+            const meta = JSON.parse(metaStr);
+            
+            const chunksStr = await cloud.getItem(`chunks_${id}`);
+            const chunksCount = parseInt(chunksStr || '0');
+            
+            let wordsStr = '';
+            for (let i = 0; i < chunksCount; i++) {
+                const chunk = await cloud.getItem(`words_${id}_${i}`);
+                if (chunk) wordsStr += chunk;
+            }
+            
+            let words = [];
+            if (wordsStr) words = JSON.parse(wordsStr);
+            
+            librariesData[id] = { ...meta, words };
+            createLibraryCard(id, meta.name, meta.emoji, meta.color);
+        }
+    } catch (e) {
+        console.error("Cloud load error:", e);
+    }
 }
 
 let selectedFolderColorClass = 'folder-color-white';
@@ -92,6 +173,16 @@ if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
         }
     }
 
+    // Индикация загрузки из облака
+    userInfo.textContent = "Syncing with Telegram Cloud...";
+    mainBtn.style.display = 'none'; // Скрываем кнопку до завершения загрузки
+
+    loadAllFromCloud().then(() => {
+        const count = Object.keys(librariesData).length;
+        userInfo.textContent = `Loaded ${count}/24 sets.`;
+        mainBtn.style.display = 'block'; // Показываем кнопку
+    });
+
 } else {
     // Если открыли просто в браузере (не в Telegram)
     userCard.style.display = 'flex';
@@ -113,14 +204,21 @@ mainBtn.addEventListener('click', () => {
 
 // Обработчик кнопки плюс
 document.getElementById('add-btn').addEventListener('click', () => {
+    // Проверка лимита в 24 библиотеки
+    if (Object.keys(librariesData).length >= 24) {
+        tg.showAlert("Limit reached: You can create up to 24 libraries.");
+        return;
+    }
+
     // Открываем модальное окно
     createModal.style.display = 'flex';
     libraryInput.value = ''; // Очищаем поле ввода
     
-    if (emojiInput && selectedEmoji) {
-        emojiInput.value = '';
-        selectedEmoji.textContent = '😀';
+    currentSelectedEmoji = '';
+    if (selectedEmoji) {
+        selectedEmoji.innerHTML = `<img src="https://emojicdn.elk.sh/%F0%9F%98%80?style=apple" alt="😀" style="width: 40px; height: 40px; pointer-events: none; filter: grayscale(100%) opacity(0.6);" />`;
     }
+    if (emojiPlus) emojiPlus.style.display = ''; // Возвращаем плюсик
 
     // Сбрасываем выбранный цвет на дефолтный (первый кружок) при открытии
     colorSwatches.forEach(s => s.classList.remove('selected'));
@@ -136,11 +234,34 @@ cancelBtn.addEventListener('click', () => {
     createModal.style.display = 'none';
 });
 
+// Вынесено в отдельную функцию, чтобы переиспользовать при загрузке из облака
+function createLibraryCard(id, name, emoji, color) {
+    const card = document.createElement('div');
+    card.className = `library-card ${color}`;
+    card.dataset.id = id;
+    
+    const title = document.createElement('h3');
+    title.className = 'library-title';
+    title.style.display = 'flex';
+    title.style.alignItems = 'center';
+    title.style.justifyContent = 'center';
+    title.style.gap = '8px';
+    
+    if (emoji) {
+        title.innerHTML = `<img src="https://emojicdn.elk.sh/${encodeURIComponent(emoji)}?style=apple" alt="${emoji}" style="width: 22px; height: 22px; flex-shrink: 0;" /> <span>${name}</span>`;
+    } else {
+        title.textContent = name;
+    }
+    
+    card.appendChild(title);
+    card.addEventListener('click', () => openLibrary(id));
+    librariesList.appendChild(card);
+}
+
 // Обработчик кнопки сохранения новой библиотеки
 saveBtn.addEventListener('click', () => {
     const newLibraryName = libraryInput.value.trim();
-    const emojiVal = emojiInput ? emojiInput.value.trim() : '';
-    const libraryEmoji = emojiVal ? Array.from(emojiVal)[0] : '';
+    const libraryEmoji = currentSelectedEmoji;
     
     if (newLibraryName) {
         console.log("Создана новая библиотека:", newLibraryName);
@@ -153,19 +274,11 @@ saveBtn.addEventListener('click', () => {
             words: []
         };
         
-        // Создаем элемент карточки
-        const card = document.createElement('div');
-        card.className = `library-card ${selectedFolderColorClass}`;
-        card.dataset.id = libId;
+        createLibraryCard(libId, newLibraryName, libraryEmoji, selectedFolderColorClass);
         
-        const title = document.createElement('h3');
-        title.className = 'library-title';
-        title.textContent = libraryEmoji ? `${libraryEmoji} ${newLibraryName}` : newLibraryName;
-        
-        card.appendChild(title);
-        card.addEventListener('click', () => openLibrary(libId)); // Открываем при клике
-        
-        librariesList.appendChild(card); // Добавляем на страницу
+        // Асинхронно сохраняем изменения в Telegram Cloud
+        saveLibraryIndex();
+        saveLibraryToCloud(libId);
         
         createModal.style.display = 'none';
     } else {
@@ -179,6 +292,7 @@ const mainPage = document.getElementById('main-page');
 const libraryPage = document.getElementById('library-page');
 const studyPage = document.getElementById('study-page');
 const libraryTitleDisplay = document.getElementById('library-title-display');
+const studyTitleDisplay = document.getElementById('study-title-display');
 const wordsListContainer = document.getElementById('words-list');
 const studyBtn = document.getElementById('study-btn');
 const wordInput = document.getElementById('word-input');
@@ -190,7 +304,15 @@ function openLibrary(id) {
     currentLibraryId = id;
     const lib = librariesData[id];
     
-    libraryTitleDisplay.textContent = lib.emoji ? `${lib.emoji} ${lib.name}` : lib.name;
+    if (lib.emoji) {
+        libraryTitleDisplay.innerHTML = `<img src="https://emojicdn.elk.sh/${encodeURIComponent(lib.emoji)}?style=apple" alt="${lib.emoji}" style="width: 28px; height: 28px; margin-right: 8px;" />${lib.name}`;
+        libraryTitleDisplay.style.display = 'flex';
+        libraryTitleDisplay.style.alignItems = 'center';
+        libraryTitleDisplay.style.justifyContent = 'center';
+    } else {
+        libraryTitleDisplay.textContent = lib.name;
+        libraryTitleDisplay.style.display = '';
+    }
     mainPage.style.display = 'none';
     libraryPage.style.display = 'block';
     
@@ -236,12 +358,38 @@ function tryAddWord() {
         wordInput.focus();
         renderWordsList();
         validateWordInputs(); // Сбрасываем кнопку обратно на красную
+        
+        saveLibraryToCloud(currentLibraryId); // Сохраняем в облако
     }
 }
 
 // Слушатели ввода для смены цвета кнопки на лету
 wordInput.addEventListener('input', validateWordInputs);
 translationInput.addEventListener('input', validateWordInputs);
+
+// Обработчик нажатия Enter в поле ввода слова
+wordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        if (wordInput.value.trim() && translationInput.value.trim()) {
+            tryAddWord(); // Если оба поля заполнены, добавляем слово
+        } else {
+            translationInput.focus(); // Иначе переносим фокус
+        }
+    }
+});
+
+// Обработчик нажатия Enter в поле перевода
+translationInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        if (wordInput.value.trim() && translationInput.value.trim()) {
+            tryAddWord(); // Если оба поля заполнены, добавляем слово
+        } else {
+            wordInput.focus(); // Иначе переносим фокус обратно на слово
+        }
+    }
+});
 
 // Обработчик формы (клик на плюс и кнопка "Готово" на мобильной клавиатуре)
 addWordForm.addEventListener('submit', (e) => {
@@ -275,10 +423,11 @@ function renderWordsList() {
         
         const delBtn = document.createElement('button');
         delBtn.className = 'word-delete-btn';
-        delBtn.textContent = '×';
+        delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
         delBtn.addEventListener('click', () => {
             librariesData[currentLibraryId].words.splice(index, 1);
             renderWordsList();
+            saveLibraryToCloud(currentLibraryId); // Сохраняем удаление в облако
         });
         
         item.appendChild(left);
@@ -291,6 +440,7 @@ function renderWordsList() {
 let currentStudyIndex = 0;
 let isCardFlipped = false;
 let studyWords = [];
+let studyUpdateTimeout;
 
 const flashcard = document.getElementById('flashcard');
 const cardWord = document.getElementById('card-word');
@@ -299,13 +449,22 @@ const studyProgress = document.getElementById('study-progress');
 
 function updateStudyCard() {
     const w = studyWords[currentStudyIndex];
-    cardWord.textContent = w.term;
-    cardTranslation.textContent = w.trans;
     studyProgress.textContent = `${currentStudyIndex + 1}/${studyWords.length}`;
     
+    clearTimeout(studyUpdateTimeout); // Сбрасываем таймер, если пользователь быстро нажимает Next
+
     if (isCardFlipped) {
         flashcard.classList.remove('flipped');
         isCardFlipped = false;
+        
+        // Небольшая задержка перед сменой текста, чтобы карточка успела начать переворачиваться (повернуться ребром)
+        studyUpdateTimeout = setTimeout(() => {
+            cardWord.textContent = w.term;
+            cardTranslation.textContent = w.trans;
+        }, 150);
+    } else {
+        cardWord.textContent = w.term;
+        cardTranslation.textContent = w.trans;
     }
 }
 
@@ -317,6 +476,17 @@ studyBtn.addEventListener('click', () => {
     currentStudyIndex = 0;
     isCardFlipped = false;
     flashcard.classList.remove('flipped');
+    
+    const lib = librariesData[currentLibraryId];
+    if (lib.emoji) {
+        studyTitleDisplay.innerHTML = `<img src="https://emojicdn.elk.sh/${encodeURIComponent(lib.emoji)}?style=apple" alt="${lib.emoji}" style="width: 28px; height: 28px; margin-right: 8px;" />${lib.name}`;
+        studyTitleDisplay.style.display = 'flex';
+        studyTitleDisplay.style.alignItems = 'center';
+        studyTitleDisplay.style.justifyContent = 'center';
+    } else {
+        studyTitleDisplay.textContent = lib.name;
+        studyTitleDisplay.style.display = '';
+    }
     
     updateStudyCard();
     libraryPage.style.display = 'none';

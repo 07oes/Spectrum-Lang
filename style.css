@@ -10,6 +10,8 @@ html, body {
     /* Убираем выделение текста при тапах на телефоне */
     -webkit-user-select: none; 
     user-select: none;
+    /* Убираем синее выделение при тапах на элементы интерфейса на телефоне */
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Устанавливаем строгий черный фон */
@@ -308,16 +310,20 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
     align-items: center;
     width: 100%;
     max-width: 500px; /* Максимальная ширина для совместного блока */
+    position: relative;
 }
 
 .main-title {
-    grid-column: 2;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     margin: 0;
     font-size: 22px;
     font-weight: 600;
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     white-space: nowrap; /* Защита от переноса текста */
     text-align: center;
+    pointer-events: none; /* Защита от случайного перекрытия боковых кнопок длинным текстом */
 }
 
 .header-avatar {
@@ -345,7 +351,7 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
 .libraries-container {
     position: relative;
     z-index: 1; /* Чтобы список был поверх волн-свечения */
-    padding: 48px 20px 120px 20px; /* Увеличен верхний отступ (48px вместо 24px) */
+    padding: 80px 20px 120px 20px; /* Единый отступ для всех страниц, чтобы быть ниже волн */
     height: calc(100% - 72px); /* Высота экрана минус высота шапки */
     box-sizing: border-box;
     overflow-y: auto;
@@ -365,20 +371,20 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
 }
 
 /* Цветовые темы для папок (базовые RGB и прозрачность для радиального градиента) */
-.folder-color-white      { --f-rgb: 255, 255, 255; --bg-c: 0.01; --bg-e: 0.08; --act-c: 0.04; --act-e: 0.12; }
-.folder-color-lightblue  { --f-rgb: 0, 200, 255;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
-.folder-color-blue       { --f-rgb: 30, 80, 255;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
-.folder-color-red        { --f-rgb: 255, 80, 80;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
-.folder-color-orange     { --f-rgb: 255, 150, 0;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
-.folder-color-yellow     { --f-rgb: 255, 230, 0;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
-.folder-color-green      { --f-rgb: 0, 255, 100;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
-.folder-color-purple     { --f-rgb: 139, 0, 255;   --bg-c: 0.05; --bg-e: 0.20; --act-c: 0.12; --act-e: 0.30; }
+.folder-color-white      { --f-rgb: 255, 255, 255; --bg-c: 0.45; --bg-e: 0.05; --act-c: 0.55; --act-e: 0.10; }
+.folder-color-lightblue  { --f-rgb: 0, 200, 255;   --bg-c: 0.70; --bg-e: 0.15; --act-c: 0.80; --act-e: 0.20; }
+.folder-color-blue       { --f-rgb: 30, 80, 255;   --bg-c: 0.70; --bg-e: 0.15; --act-c: 0.80; --act-e: 0.20; }
+.folder-color-red        { --f-rgb: 255, 80, 80;   --bg-c: 0.70; --bg-e: 0.15; --act-c: 0.80; --act-e: 0.20; }
+.folder-color-orange     { --f-rgb: 255, 150, 0;   --bg-c: 0.70; --bg-e: 0.15; --act-c: 0.80; --act-e: 0.20; }
+.folder-color-yellow     { --f-rgb: 255, 230, 0;   --bg-c: 0.70; --bg-e: 0.15; --act-c: 0.80; --act-e: 0.20; }
+.folder-color-green      { --f-rgb: 0, 255, 100;   --bg-c: 0.70; --bg-e: 0.15; --act-c: 0.80; --act-e: 0.20; }
+.folder-color-purple     { --f-rgb: 139, 0, 255;   --bg-c: 0.70; --bg-e: 0.15; --act-c: 0.80; --act-e: 0.20; }
 
 /* Карточка библиотеки (набора) */
 .library-card {
     position: relative;
-    /* Радиальный градиент: в центре прозрачнее (--bg-c), по краям насыщеннее (--bg-e) */
-    background: radial-gradient(circle closest-side at center, rgba(var(--f-rgb, 255, 255, 255), var(--bg-c, 0.01)) 0%, rgba(var(--f-rgb, 255, 255, 255), var(--bg-e, 0.08)) 100%);
+    /* Яркий радиальный градиент с фиксированным радиусом 200px для точной состыковки */
+    background: radial-gradient(200px at 0px 0px, rgba(var(--f-rgb, 255, 255, 255), var(--bg-c, 0.70)) 0%, rgba(var(--f-rgb, 255, 255, 255), var(--bg-e, 0.15)) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-top: none; /* Убираем линию, чтобы язычок и папка слились в одну фигуру */
     border-left-color: rgba(255, 255, 255, 0.2);
@@ -407,7 +413,8 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
     left: -1px; /* Идеальное выравнивание с левым бортом */
     width: 45%;
     height: 15px; /* Строго 15px, чтобы убрать нахлест и сложение прозрачности */
-    background: rgba(var(--f-rgb, 255, 255, 255), var(--bg-e, 0.08)); /* Берем цвет края папки для бесшовного стыка */
+    /* Точно такой же градиент, но отцентрированный по нижнему краю вкладки (100% Y и смещение 1px), чтобы пиксель в пиксель слиться с градиентом папки */
+    background: radial-gradient(200px at 1px 100%, rgba(var(--f-rgb, 255, 255, 255), var(--bg-c, 0.70)) 0%, rgba(var(--f-rgb, 255, 255, 255), var(--bg-e, 0.15)) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-top-color: rgba(255, 255, 255, 0.2);
     border-left-color: rgba(255, 255, 255, 0.2);
@@ -420,12 +427,12 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
 
 .library-card:active {
     transform: scale(0.97);
-    background: radial-gradient(circle closest-side at center, rgba(var(--f-rgb, 255, 255, 255), var(--act-c, 0.04)) 0%, rgba(var(--f-rgb, 255, 255, 255), var(--act-e, 0.12)) 100%);
+    background: radial-gradient(200px at 0px 0px, rgba(var(--f-rgb, 255, 255, 255), var(--act-c, 0.80)) 0%, rgba(var(--f-rgb, 255, 255, 255), var(--act-e, 0.20)) 100%);
 }
 
 /* Синхронизируем осветление "язычка" при нажатии на папку */
 .library-card:active::before {
-    background: rgba(var(--f-rgb, 255, 255, 255), var(--act-e, 0.12));
+    background: radial-gradient(200px at 1px 100%, rgba(var(--f-rgb, 255, 255, 255), var(--act-c, 0.80)) 0%, rgba(var(--f-rgb, 255, 255, 255), var(--act-e, 0.20)) 100%);
 }
 
 .library-title {
@@ -435,7 +442,7 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
     font-weight: 500;
     margin: 0;
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-    text-align: center; /* Центрируем текст внутри квадрата */
+    text-align: center; /* Центрируем текст */
     word-break: break-word; /* Переносим длинные слова, чтобы они не вылезали за края */
 }
 
@@ -547,29 +554,45 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
 }
 .emoji-plus {
     position: absolute;
-    bottom: -4px;
-    right: -4px;
-    background: var(--tg-theme-button-color, #0a91ff);
-    color: white;
-    font-size: 14px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
+    bottom: -5px;
+    right: 5px;
+    color: #cfcfcf;
+    font-size: 26px;
+    font-weight: bold;
+}
+
+/* Сетка для выбора эмодзи */
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 4px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.emoji-grid::-webkit-scrollbar {
+    display: none;
+}
+.emoji-grid-item {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
-.emoji-native-input {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
     cursor: pointer;
-    font-size: 16px;
+    transition: background 0.2s, transform 0.2s;
+}
+.emoji-grid-item:hover, .emoji-grid-item:active {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+.emoji-grid-item img {
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
 }
 
 /* --- Стили для выбора цвета --- */
@@ -621,25 +644,36 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
 
 /* --- Стили для новых окон (Библиотека и Изучение) --- */
 .icon-btn {
-    background: transparent;
-    border: none;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
     color: white;
-    font-size: 20px;
+    font-size: 16px;
     cursor: pointer;
-    padding: 10px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.8;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
+    box-sizing: border-box;
 }
-.icon-btn:hover { opacity: 1; }
+.icon-btn:hover { 
+    background: rgba(0, 0, 0, 0.5); 
+}
+.icon-btn:active {
+    transform: scale(0.95);
+    background: rgba(0, 0, 0, 0.7);
+}
 
 .library-content {
     position: relative;
     z-index: 1;
     height: calc(100% - 72px);
     overflow-y: auto;
+    padding-top: 80px; /* Выравниваем на тот же уровень, что и карточки */
     padding-bottom: 100px;
     box-sizing: border-box;
     -ms-overflow-style: none;
@@ -668,6 +702,12 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
 .word-delete-btn {
     background: transparent; border: none; color: #ff5050;
     font-size: 18px; cursor: pointer; padding: 8px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.2s, opacity 0.2s;
+}
+.word-delete-btn:active {
+    transform: scale(0.9);
+    opacity: 0.8;
 }
 
 .study-fab {
@@ -684,11 +724,11 @@ background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00bfff, 
 .study-content {
     position: relative; z-index: 1; height: calc(100% - 72px);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 20px; box-sizing: border-box;
+    padding: 80px 20px 20px 20px; box-sizing: border-box;
 }
 .flashcard {
     background-color: transparent; width: 100%; max-width: 340px;
-    height: 60%; perspective: 1000px; margin-bottom: 40px; cursor: pointer;
+    aspect-ratio: 1 / 1; perspective: 1000px; margin-bottom: 40px; cursor: pointer;
 }
 .flashcard-inner {
     position: relative; width: 100%; height: 100%; text-align: center;

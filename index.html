@@ -58,13 +58,12 @@
             
             <div class="input-row" style="display: flex; gap: 12px; margin-bottom: 24px; align-items: center; width: 100%;">
                 <div class="emoji-picker-container">
-                    <div class="emoji-picker-btn" id="emoji-display">
-                        <span id="selected-emoji">😀</span>
-                        <span class="emoji-plus">+</span>
+                    <div class="emoji-picker-btn" id="emoji-display" style="cursor: pointer;">
+                        <span id="selected-emoji" style="display: flex; align-items: center; justify-content: center;"><img src="https://emojicdn.elk.sh/😀?style=apple" alt="😀" style="width: 40px; height: 40px; filter: grayscale(100%) opacity(0.6);" /></span>
+                        <span class="emoji-plus" id="emoji-plus">+</span>
                     </div>
-                    <input type="text" id="emoji-input" class="emoji-native-input" placeholder="e">
                 </div>
-                <input type="text" id="library-name-input" class="tg-input" placeholder="lib name" style="margin-bottom: 0; flex: 1;">
+                <input type="text" id="library-name-input" class="tg-input" placeholder="lib name" style="margin-bottom: 0; flex: 1;" maxlength="14">
             </div>
 
             <!-- Выбор цвета папки -->
@@ -86,25 +85,36 @@
         </div>
     </div>
 
+    <!-- Модальное окно для выбора эмодзи -->
+    <div class="modal-overlay" id="emoji-picker-modal" style="display: none; z-index: 150;">
+        <div class="glass-panel modal-content" style="width: 320px; padding: 24px;">
+            <h3 style="margin: 0 0 16px; font-size: 18px; font-weight: 500;">Choose Icon</h3>
+            <div class="emoji-grid" id="emoji-grid">
+                <!-- Эмодзи генерируются через JS -->
+            </div>
+            <button class="tg-btn-secondary" id="close-emoji-picker" style="margin-top: 20px; width: 100%;">Close</button>
+        </div>
+    </div>
+
     <!-- Окно просмотра библиотеки (Library View) -->
     <div class="main-page" id="library-page" style="display: none;">
         <div class="header-glow"></div>
         <div class="main-header">
             <div class="header-content" style="grid-template-columns: 40px minmax(0, 1fr) 40px;">
-                <button class="icon-btn" id="back-to-main-btn" style="grid-column: 1; justify-self: start;">◄</button>
+                <button class="icon-btn" id="back-to-main-btn" style="grid-column: 1; justify-self: start;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
                 <h1 class="main-title" id="library-title-display">Set</h1>
                 <div style="grid-column: 3;"></div>
             </div>
         </div>
         
         <div class="library-content">
-            <div class="glass-panel" style="position: relative; top: 0; left: 0; transform: none; width: auto; margin: 60px 20px 20px 20px; padding: 20px; border-radius: 20px;">
-                <form id="add-word-form" style="display: flex; gap: 12px; width: 100%; align-items: center; margin: 0;">
-                    <input type="text" id="word-input" class="tg-input" placeholder="Word" style="margin-bottom: 0; flex: 1; border-radius: 50px;">
-                    <input type="text" id="translation-input" class="tg-input" placeholder="Translation" style="margin-bottom: 0; flex: 1; border-radius: 50px;">
-                    <button type="submit" class="tg-login-btn btn-disabled-red" id="add-word-btn" style="padding: 0; width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; font-size: 24px; display: flex; justify-content: center; align-items: center;">+</button>
-                </form>
-            </div>
+            <form id="add-word-form" style="display: flex; gap: 12px; width: 100%; align-items: center; padding: 0 20px 24px 20px; box-sizing: border-box; margin: 0;">
+                <input type="text" id="word-input" class="tg-input" placeholder="Word" style="margin-bottom: 0; flex: 1; border-radius: 50px;">
+                <input type="text" id="translation-input" class="tg-input" placeholder="Translation" style="margin-bottom: 0; flex: 1; border-radius: 50px;">
+                <button type="submit" class="tg-login-btn btn-disabled-red" id="add-word-btn" style="padding: 0; width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; font-size: 24px; display: flex; justify-content: center; align-items: center;">+</button>
+            </form>
             <div id="words-list" class="words-list-container"></div>
         </div>
         <button class="study-fab" id="study-btn" style="display: none;">Start Study</button>
@@ -115,8 +125,10 @@
         <div class="header-glow"></div>
         <div class="main-header">
             <div class="header-content" style="grid-template-columns: 40px minmax(0, 1fr) 40px;">
-                <button class="icon-btn" id="back-to-lib-btn" style="grid-column: 1; justify-self: start;">◄</button>
-                <h1 class="main-title">Study</h1>
+                <button class="icon-btn" id="back-to-lib-btn" style="grid-column: 1; justify-self: start;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <h1 class="main-title" id="study-title-display">Study</h1>
                 <div id="study-progress" style="grid-column: 3; justify-self: end; font-size: 14px; opacity: 0.7;">1/5</div>
             </div>
         </div>
